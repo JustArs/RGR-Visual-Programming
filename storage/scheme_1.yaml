@@ -1,0 +1,88 @@
+---
+name: Схема
+created: 1682293697
+modified: 1682294003
+items:
+	-
+		id: 4
+		pos: $p$349,321
+		size: $s$90,123
+	-
+		id: 5
+		pos: $p$133,289
+		size: $s$75,75
+		state: false
+	-
+		id: 5
+		pos: $p$137,365
+		size: $s$75,75
+		state: true
+	-
+		id: 5
+		pos: $p$109,471
+		size: $s$75,75
+		state: true
+	-
+		id: 5
+		pos: $p$124,557
+		size: $s$75,75
+		state: false
+	-
+		id: 7
+		pos: $p$555,303
+		size: $s$75,75
+	-
+		id: 7
+		pos: $p$552,414
+		size: $s$75,75
+joins:
+	-
+		- 1
+		- 0
+		- Out
+		- 0
+		- 0
+		- In
+	-
+		- 2
+		- 0
+		- Out
+		- 0
+		- 1
+		- In
+	-
+		- 3
+		- 0
+		- Out
+		- 0
+		- 2
+		- In
+	-
+		- 4
+		- 0
+		- Out
+		- 0
+		- 3
+		- In
+	-
+		- 0
+		- 4
+		- Out
+		- 5
+		- 0
+		- In
+	-
+		- 0
+		- 5
+		- Out
+		- 6
+		- 0
+		- In
+states:
+	- false
+	- false
+	- true
+	- false
+	- true
+	- true
+	- false
