@@ -18,7 +18,7 @@ namespace LogicSimulator.Models {
         readonly Line marker = new() { Tag = "Marker", ZIndex = 2, IsVisible = false, Stroke = Brushes.YellowGreen, StrokeThickness = 3 };
         public Line Marker { get => marker; }
 
-        readonly Simulator sim = new();
+        public readonly Simulator sim = new();
 
         /*
          * Выборка элементов
@@ -162,7 +162,8 @@ namespace LogicSimulator.Models {
                 break;
             case 5 or 6 or 7:
                 if (marker_circle == null) break;
-                var gate = GetGate(marker_circle) ?? throw new Exception("Чё?!"); // Такого не бывает
+                var gate = GetGate(marker_circle);
+                if (gate == null) break;
                 start_dist = gate.GetPin(marker_circle, FindCanvas());
 
                 var circle_pos = start_dist.GetPos();
@@ -201,23 +202,22 @@ namespace LogicSimulator.Models {
         }
         public void FixItem(ref Control res, Point pos, IEnumerable<ILogical> items) {
             foreach (var logic in items) {
+                // if (item.IsPointerOver) { } Гениальная вещь! ;'-} Хотя не, всё равно блокируется после Press и до Release, чего я впринципе хочу избежать ;'-}
                 var item = (Control) logic;
                 var tb = item.TransformedBounds;
-                if (tb != null && tb.Value.Bounds.TransformToAABB(tb.Value.Transform).Contains(pos) && (string?) item.Tag != "Join") res = item; 
+                // if (tb != null && new Rect(tb.Value.Clip.TopLeft, new Size()).Sum(item.Bounds).Contains(pos) && (string?) item.Tag != "Join") res = item; // Гениально! ;'-} НАКОНЕЦ-ТО ЗАРАБОТАЛО! (Так было в 8 лабе)
+                if (tb != null && tb.Value.Bounds.TransformToAABB(tb.Value.Transform).Contains(pos) && (string?) item.Tag != "Join") res = item; // Гениально! Апгрейд прошёл успешно :D
                 FixItem(ref res, pos, item.GetLogicalChildren());
             }
         }
-        public void Move(Control item, Point pos)
-        {
+        public void Move(Control item, Point pos) {
+            // Log.Write("PointerMoved: " + item.GetType().Name + " pos: " + pos);
 
-            if (mode == 5 || mode == 6 || mode == 7 || mode == 8)
-            {
+            if (mode == 5 || mode == 6 || mode == 7 || mode == 8) {
                 var canv = FindCanvas();
-                if (canv != null)
-                {
+                if (canv != null) {
                     var tb = canv.TransformedBounds;
-                    if (tb != null)
-                    {
+                    if (tb != null) {
                         item = new Canvas() { Tag = "Scene" };
                         var bounds = tb.Value.Bounds.TransformToAABB(tb.Value.Transform);
                         FixItem(ref item, pos + bounds.TopLeft, canv.Children);
@@ -226,40 +226,29 @@ namespace LogicSimulator.Models {
             }
 
             string[] mods = new[] { "In", "Out", "IO" };
-            var tag = (string?)item.Tag;
-
-
-            var from_point = -1;
-            var to_point = -1;
-
-            if (start_dist != null) from_point = items.IndexOf(start_dist.parent);
-            if (GetGate(item) != null) to_point = items.IndexOf(GetGate(item));
-
-            //Log.Write("Blya: " + from_point + " " + to_point);
-
+            var tag = (string?) item.Tag;
             if (IsMode(item, mods) && item is Ellipse @ellipse
-                && !(marker_mode == 5 && tag == "In" || marker_mode == 6 && tag == "Out") && (from_point != to_point))
-            { 
+                && !(marker_mode == 5 && tag == "In" || marker_mode == 6 && tag == "Out")) { // То самое место, что не даёт подключить вход ко входу, либо выход к выходу
 
-                if (marker_circle != null && marker_circle != @ellipse)
-                { 
+                if (marker_circle != null && marker_circle != @ellipse) { // На случай моментального перехода курсором с одного кружка на другой
                     marker_circle.Fill = new SolidColorBrush(Color.Parse("#0000"));
                     marker_circle.Stroke = Brushes.Gray;
                 }
-
                 marker_circle = @ellipse;
                 @ellipse.Fill = Brushes.Lime;
                 @ellipse.Stroke = Brushes.Green;
-
-            }
-            else if (marker_circle != null)
-            {
+            } else if (marker_circle != null) {
                 marker_circle.Fill = new SolidColorBrush(Color.Parse("#0000"));
                 marker_circle.Stroke = Brushes.Gray;
                 marker_circle = null;
             }
 
-            if (mode == 8) delete_join = (string?)item.Tag == "Deleter";
+            if (mode == 8) delete_join = (string?) item.Tag == "Deleter";
+
+            /* if (mode == 0 && (string?) item.Tag == "Join") { DEBUG
+                JoinedItems.arrow_to_join.TryGetValue((Line) item, out var @join);
+                if (@join != null) Log.Write("J a->b: id" + items.IndexOf(@join.A.parent) + " n:" + @join.A.num + "    id" + items.IndexOf(@join.B.parent) + " n:" + @join.B.num);
+            }*/
 
 
 
@@ -268,28 +257,27 @@ namespace LogicSimulator.Models {
 
             if (Math.Pow(delta.X, 2) + Math.Pow(delta.Y, 2) > 9) tapped = false;
 
-            switch (mode)
-            {
-                case 2:
-                    if (moved_item == null) break;
-                    var new_pos = item_old_pos + delta;
-                    moved_item.Move(new_pos);
-                    break;
-                case 3:
-                    if (moved_item == null) break;
-                    var new_size = item_old_size + new Size(delta.X, delta.Y);
-                    moved_item.Resize(new_size, false);
-                    break;
-                case 5 or 6 or 7:
-                    var end_pos = marker_circle == null ? pos : marker_circle.Center(FindCanvas());
-                    marker.EndPoint = end_pos;
-                    break;
-                case 8:
-                    if (old_join == null) break;
-                    var p = marker_circle == null ? pos : marker_circle.Center(FindCanvas());
-                    if (join_start) marker.EndPoint = p;
-                    else marker.StartPoint = p;
-                    break;
+            switch (mode) {
+            case 2:
+                if (moved_item == null) break;
+                var new_pos = item_old_pos + delta;
+                moved_item.Move(new_pos);
+                break;
+            case 3:
+                if (moved_item == null) break;
+                var new_size = item_old_size + new Size(delta.X, delta.Y);
+                moved_item.Resize(new_size, false);
+                break;
+            case 5 or 6 or 7:
+                var end_pos = marker_circle == null ? pos : marker_circle.Center(FindCanvas());
+                marker.EndPoint = end_pos;
+                break;
+            case 8:
+                if (old_join == null) break;
+                var p = marker_circle == null ? pos : marker_circle.Center(FindCanvas());
+                if (join_start) marker.EndPoint = p;
+                else marker.StartPoint = p;
+                break;
             }
         }
 
@@ -297,49 +285,43 @@ namespace LogicSimulator.Models {
         public Point tap_pos; // Обрабатывается после Release
         public Line? new_join; // Обрабатывается после Release
 
-        public int Release(Control item, Point pos)
-        {
+        public int Release(Control item, Point pos) {
             Move(item, pos);
+            // Log.Write("PointerReleased: " + item.GetType().Name + " pos: " + pos);
 
-            switch (mode)
-            {
-                case 5 or 6 or 7:
-                    if (start_dist == null) break;
-                    if (marker_circle != null)
-                    {
+            switch (mode) {
+            case 5 or 6 or 7:
+                if (start_dist == null) break;
+                if (marker_circle != null) {
+                    var gate = GetGate(marker_circle) ?? throw new Exception("Чё?!"); // Такого не бывает
+                    var end_dist = gate.GetPin(marker_circle, FindCanvas());
+                    // Log.Write("Стартовый элемент: " + start_dist.parent + " (" + start_dist.GetPos() + ")");
+                    // Log.Write("Конечный  элемент: " + end_dist.parent   + " (" + end_dist.GetPos()   + ")");
+                    var newy = new JoinedItems(start_dist, end_dist);
+                    new_join = newy.line;
+                }
+                marker.IsVisible = false;
+                marker_mode = 0;
+                break;
+            case 8:
+                if (old_join == null) break;
+                JoinedItems.arrow_to_join.TryGetValue(old_join, out var @join);
+                if (marker_circle != null && @join != null) {
+                    var gate = GetGate(marker_circle) ?? throw new Exception("Чё?!"); // Такого не бывает
+                    var p = gate.GetPin(marker_circle, FindCanvas());
+                    @join.Delete();
 
-                        var gate = GetGate(marker_circle) ?? throw new Exception("Чё?!"); 
-                        var end_dist = gate.GetPin(marker_circle, FindCanvas());
-                        var newy = new JoinedItems(start_dist, end_dist);
-                        new_join = newy.line;
-                    }
+                    var newy = join_start ? new JoinedItems(@join.A, p) : new JoinedItems(p, @join.B);
+                    new_join = newy.line;
+                } else old_join.IsVisible = true;
 
+                marker.IsVisible = false;
+                marker_mode = 0;
+                old_join = null;
 
-                    start_dist = null;
-                    marker.IsVisible = false;
-                    marker_mode = 0;
-                    break;
-                case 8:
-                    if (old_join == null) break;
-                    JoinedItems.arrow_to_join.TryGetValue(old_join, out var @join);
-                    if (marker_circle != null && @join != null)
-                    {
-                        var gate = GetGate(marker_circle) ?? throw new Exception("Чё?!"); 
-                        var p = gate.GetPin(marker_circle, FindCanvas());
-                        @join.Delete();
-
-                        var newy = join_start ? new JoinedItems(@join.A, p) : new JoinedItems(p, @join.B);
-                        new_join = newy.line;
-                    }
-                    else old_join.IsVisible = true;
-
-                    marker.IsVisible = false;
-                    marker_mode = 0;
-                    old_join = null;
-
-                    if (delete_join) @join?.Delete();
-                    delete_join = false;
-                    break;
+                if (delete_join) @join?.Delete();
+                delete_join = false;
+                break;
             }
 
             if (tapped) Tapped(item, pos);
@@ -350,6 +332,7 @@ namespace LogicSimulator.Models {
         }
 
         private void Tapped(Control item, Point pos) {
+            // Log.Write("Tapped: " + item.GetType().Name + " pos: " + pos);
             tap_pos = pos;
 
             if (mode == 4 && moved_item != null) RemoveItem(moved_item);
@@ -365,7 +348,10 @@ namespace LogicSimulator.Models {
 
         public readonly FileHandler filer = new();
 
-        public void Export(Scheme current_scheme) {
+        public Scheme? current_scheme;
+        public void Export() {
+            if (current_scheme == null) return;
+
             var arr = items.Select(x => x.Export()).ToArray();
 
             Dictionary<IGate, int> item_to_num = new();
@@ -384,7 +370,8 @@ namespace LogicSimulator.Models {
             Log.Write("States: " + Utils.Obj2json(states));
         }
 
-        public void ImportScheme(Scheme current_scheme, Canvas canv) {
+        public void ImportScheme(Canvas canv, bool is_test = false) {
+            if (current_scheme == null) return;
             sim.lock_sim = true;
 
             RemoveAll();
@@ -419,12 +406,14 @@ namespace LogicSimulator.Models {
             sim.Import(current_scheme.states);
             sim.lock_sim = false;
 
-            Task.Run(async () => { 
+            Task.Run(async () => { // Временный багофикс невидимых линий соединения из-за специфики высчета центров кругов под копотом XD
                 await Task.Delay(50);
                 await Dispatcher.UIThread.InvokeAsync(() => {
                     foreach (var join in joinz) join.Update();
                 });
             });
+
+            if (!is_test) sim.Start();
         }
     }
 }

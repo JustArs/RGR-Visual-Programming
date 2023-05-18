@@ -40,7 +40,7 @@
 			</MenuItem>
 		</Menu>
 		<Grid ColumnDefinitions="*,3*,*">
-			<ListBox Items="{Binding ItemTypes}" SelectedIndex="{Binding SelectedItem}">
+			<ListBox Items="{Binding ItemTypes}" SelectedIndex="{Binding SelectedItem}" Name="Gates">
 				<ListBox.ItemTemplate>
 					<DataTemplate>
 						<ContentControl Content="{Binding}"/>

@@ -54,7 +54,7 @@ namespace LogicSimulator.Views.Shapes {
          */
 
         protected readonly double base_size = 25;
-        protected double width = 30 * 3; 
+        protected double width = 30 * 3; // Размеры тела, а не всего UserControl
         protected double height = 30 * 3;
 
         public double BaseSize => base_size;
@@ -146,8 +146,10 @@ namespace LogicSimulator.Views.Shapes {
         }
 
         public void RemoveJoin(JoinedItems join) {
-            if (join.A.parent == this) joins[join.A.num] = null;
-            if (join.B.parent == this) joins[join.B.num] = null;
+            try {
+                if (join.A.parent == this) joins[join.A.num] = null;
+                if (join.B.parent == this) joins[join.B.num] = null;
+            } catch { }
             skip_upd = false;
         }
 
@@ -163,7 +165,7 @@ namespace LogicSimulator.Views.Shapes {
         public void SetJoinColor(int o_num, bool value) {
             var join = joins[o_num + CountIns];
             if (join != null)
-                Dispatcher.UIThread.InvokeAsync(() => { 
+                Dispatcher.UIThread.InvokeAsync(() => { // Ох, знакомая головная боль с андроида, где даже Toast за пределами главного потока не вызовешь :/ XD :D
                     join.line.Stroke = value ? Brushes.Lime : Brushes.DarkGray;
                 });
         }
@@ -182,8 +184,9 @@ namespace LogicSimulator.Views.Shapes {
         }
 
         public Point GetPinPos(int n, Visual? ref_point) {
+            if (n >= pins.Length) n = 0;
             var pin = pins[n];
-            return pin.Center(ref_point); 
+            return pin.Center(ref_point); // Смотрите Utils ;'-} Там круто сделан метод
         }
 
         /*
@@ -205,7 +208,8 @@ namespace LogicSimulator.Views.Shapes {
                     if (item.tag == "Out" || item.tag == "IO") {
                         var p = item.parent;
                         Meta meta = ids[p];
-                        me.ins[i] = meta.outs[item.num - p.CountIns];
+                        int n = item.num - p.CountIns;
+                        me.ins[i] = n >= meta.outs.Length ? 0 : meta.outs[n];
                     }
                 }
                 if (join.B.parent == this) {
@@ -213,14 +217,15 @@ namespace LogicSimulator.Views.Shapes {
                     if (item.tag == "Out" || item.tag == "IO") {
                         var p = item.parent;
                         Meta meta = ids[p];
-                        me.ins[i] = meta.outs[item.num - p.CountIns];
+                        int n = item.num - p.CountIns;
+                        me.ins[i] = n >= meta.outs.Length ? 0 : meta.outs[n];
                     }
                 }
             }
         }
 
         /*
-         * Экспорт
+         * Экспорт, но может быть прокачан в дочернем классе, если есть что добавить
          */
 
         public abstract int TypeId { get; }
@@ -257,5 +262,7 @@ namespace LogicSimulator.Views.Shapes {
             if (@value2 is not Size @size) { Log.Write("Неверный тип size-записи элемента: " + @value2); return; }
             Resize(@size, false);
         }
+
+        public Ellipse SecretGetPin(int n) => pins[n];
     }
 }

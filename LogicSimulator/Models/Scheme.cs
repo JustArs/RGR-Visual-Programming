@@ -51,8 +51,9 @@ namespace LogicSimulator.Models {
             joins = arr2.ToArray();
 
             if (!dict.TryGetValue("states", out var value6)) throw new Exception("В схеме нет списка состояний");
-            if (value6 is not List<object> arr3) throw new Exception("Список состояний схемы - не массив bool");
-            states = arr3.Select(x => (bool) x).ToArray();
+            if (value6 is List<object> arr3) states = arr3.Select(x => (bool) x).ToArray();
+            else if (value6 is string arr4) states = arr4.Select(x => x == '1').ToArray();
+            else throw new Exception("Список состояний схемы - не массив bool, либо строка");
         }
 
         public void Update(object[] items, object[] joins, bool[] states) {

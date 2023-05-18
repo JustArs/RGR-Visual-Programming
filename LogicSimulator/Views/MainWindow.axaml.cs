@@ -3,7 +3,7 @@ using LogicSimulator.ViewModels;
 
 namespace LogicSimulator.Views {
     public partial class MainWindow: Window {
-        readonly MainWindowViewModel mwvm;
+        public readonly MainWindowViewModel mwvm;
 
         public MainWindow() {
             InitializeComponent();

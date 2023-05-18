@@ -63,16 +63,18 @@ namespace LogicSimulator.Models {
 
         public static void SaveProject(Project proj) {
             var data = Utils.Obj2json(proj.Export());
-            File.WriteAllText(dir + proj.FileName, data);
+            if (!test_mode) File.WriteAllText(dir + proj.FileName, data);
         }
         public static void SaveScheme(Scheme scheme) {
             var data = Utils.Obj2yaml(scheme.Export());
-            File.WriteAllText(dir + scheme.FileName, data);
+            if (!test_mode) File.WriteAllText(dir + scheme.FileName, data);
         }
 
         public Project[] GetSortedProjects() {
             projects.Sort();
             return projects.ToArray();
         }
+
+        public static bool test_mode = false;
     }
 }

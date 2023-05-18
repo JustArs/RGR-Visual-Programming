@@ -40,20 +40,27 @@ namespace LogicSimulator.ViewModels {
     public class MainWindowViewModel: ViewModelBase, INotifyPropertyChanged {
         private string log = "";
         public string Logg { get => log; set {
+            // this.RaiseAndSetIfChanged(ref log, value); Почему-то сломался из-за добавления INotifyPropertyChanged
             if (log == value) return;
             log = value;
             PropertyChanged?.Invoke(this, new(nameof(Logg)));
         } }
 
-        public MainWindowViewModel() { 
+        public MainWindowViewModel() { // Если я буду Window mw передавать через этот конструктор, то предварительный просмотр снова порвёт смачно XD
             Log.Mwvm = this;
             Comm = ReactiveCommand.Create<string, Unit>(n => { FuncComm(n); return new Unit(); });
 
-
+            /* Так не работает :/
+            var app = Application.Current;
+            if (app == null) return; // Такого не бывает
+            var life = (IClassicDesktopStyleApplicationLifetime?) app.ApplicationLifetime;
+            if (life == null) return; // Такого не бывает
+            foreach (var w in life.Windows) Log.Write("Window: " + w);
+            Log.Write("Windows: " + life.Windows.Count); */
         }
 
         private Window? mw;
-        private Canvas? canv;
+        public Canvas? canv;
         public void AddWindow(Window window) {
             var canv = window.Find<Canvas>("Canvas");
 
@@ -133,7 +140,7 @@ namespace LogicSimulator.ViewModels {
             old_b_child_tag = tb.Tag;
             prev_scheme_name = tb.Text;
 
-            var newy = new TextBox { Text = tb.Text }; 
+            var newy = new TextBox { Text = tb.Text }; // Изи блиц-транcформация в одну строчку ;'-}
             
             // Log.Write("Tag: " + tb.Tag);
             b.Child = newy;
@@ -159,8 +166,8 @@ namespace LogicSimulator.ViewModels {
         public void Update() {
             Log.Write("Текущий проект:\n" + current_proj);
 
-            if (current_scheme == null || canv == null) throw new Exception("Такого не бывает");
-            map.ImportScheme(current_scheme, canv);
+            if (map.current_scheme == null || canv == null) throw new Exception("Такого не бывает");
+            map.ImportScheme(canv);
 
             PropertyChanged?.Invoke(this, new(nameof(ProjName)));
             PropertyChanged?.Invoke(this, new(nameof(Schemes)));
@@ -180,7 +187,7 @@ namespace LogicSimulator.ViewModels {
                 mw?.Hide();
                 break;
             case "Save":
-                if (current_scheme != null) map.Export(current_scheme);
+                if (map.current_scheme != null) map.Export();
                 break;
             case "Exit":
                 mw?.Close();

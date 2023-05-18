@@ -15,6 +15,7 @@ using Avalonia.Controls.Shapes;
 
 namespace LogicSimulator.Models {
     public static class Utils {
+        // By VectorASD         Всё это моих рук дела! ;'-}
 
         /*
          * Base64 абилка
@@ -39,13 +40,13 @@ namespace LogicSimulator.Models {
                 sb.Append(i switch {
                     '"' => "\\\"",
                     '\\' => "\\\\",
-                    '$' => "{$", 
+                    '$' => "{$", // Чисто по моей части ;'-}
                     _ => i
                 });
             }
             return sb.ToString();
         }
-        public static string Obj2json(object? obj) { 
+        public static string Obj2json(object? obj) { // Велосипед ради поддержки своей сериализации классов по типу Point, SolidColorBrush и т.д.
             switch (obj) {
             case null: return "null";
             case string @str: return '"' + JsonEscape(str) + '"';
@@ -95,6 +96,7 @@ namespace LogicSimulator.Models {
             return str[1] switch {
                 'p' => Point.Parse(data),
                 's' => Size.Parse(data),
+                // 'P' => new SafePoints(data.Replace('|', ' ')).Points,
                 'C' => new SolidColorBrush(Color.Parse(data)),
                 'T' => new Thickness(double.Parse(thick[0]), double.Parse(thick[1]), double.Parse(thick[2]), double.Parse(thick[3])),
                 _ => str,
@@ -373,8 +375,13 @@ namespace LogicSimulator.Models {
             else if (json[0] == '{') data = JsonSerializer.Deserialize<Dictionary<string, object?>>(json);
             else return null;
 
-            return "---" + ToYAMLHandler(data, "\n") + "\n"; 
+            return "---" + ToYAMLHandler(data, "\n") + "\n"; // Конец будет обязателен, как в питоне!
         }
+
+        // Полностью мой парсер (by VectorASD).
+        // Конечно можно было лучше сделать, предварительно обработав слои,
+        // а потом уже их содержимое, но это мой первый опыт с паршением слоевушек,
+        // да и перекодивать уже нулевое желание...
 
         private static void YAML_Log(string mess, int level = 0) {
             if (level >= 4) Log.Write(mess);
@@ -575,12 +582,14 @@ namespace LogicSimulator.Models {
          * Misc
          */
 
-        public static string? Obj2xml(object? obj) => Json2xml(Obj2json(obj)); 
+        public static string? Obj2xml(object? obj) => Json2xml(Obj2json(obj)); // Чёт припомнилось свойство транзитивности с дискретной матеши...
         public static object? Xml2obj(string xml) => Json2obj(Xml2json(xml));
         public static string? Obj2yaml(object? obj) => Json2yaml(Obj2json(obj));
         public static object? Yaml2obj(string xml) => Json2obj(Yaml2json(xml));
 
         public static void RenderToFile(Control target, string path) {
+            // var target = (Control?) tar.Parent;
+            // if (target == null) return;
 
             double w = target.Bounds.Width, h = target.Bounds.Height;
             var pixelSize = new PixelSize((int) w, (int) h);
@@ -592,7 +601,7 @@ namespace LogicSimulator.Models {
             bitmap.Save(path);
         }
 
-        public static string TrimAll(this string str) { 
+        public static string TrimAll(this string str) { // Помимо пробелов по бокам, убирает повторы пробелов внутри
             StringBuilder sb = new();
             for (int i = 0; i < str.Length; i++) {
                 if (i > 0 && str[i] == ' ' && str[i - 1] == ' ') continue;
@@ -601,6 +610,9 @@ namespace LogicSimulator.Models {
             return sb.ToString().Trim();
         }
 
+        // Странно, почему оригинальный Split() работает, как обычный Split(' '),
+        // ведь во всех языках (по крайней мере в тех, которые я видел до C#) он
+        // игнорирует добавления в ответ пустых строк.
         public static string[] NormSplit(this string str) => str.TrimAll().Split(' ');
 
         public static string GetStackInfo() {
@@ -653,7 +665,7 @@ namespace LogicSimulator.Models {
         public static double Max(this double A, double B) => A > B ? A : B;
 
         public static void Remove(this Control item) {
-            var p = (Panel?) item.Parent; 
+            var p = (Panel?) item.Parent; // Именно Panel и добавляет понятие Children ;'-}}}}}}}}}}
             p?.Children.Remove(item);
         }
 
@@ -662,7 +674,7 @@ namespace LogicSimulator.Models {
             if (tb == null) return new(); // Обычно так не бывает
             var bounds = tb.Value.Bounds.TransformToAABB(tb.Value.Transform);
             var res = bounds.Center;
-            if (parent == null) return res; 
+            if (parent == null) return res; // parent в качестве точки отсчёта, например холст
 
             var tb2 = parent.TransformedBounds;
             if (tb2 == null) return res; // Обычно так не бывает

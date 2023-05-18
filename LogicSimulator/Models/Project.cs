@@ -84,7 +84,7 @@ namespace LogicSimulator.Models {
 
         public int CompareTo(object? obj) {
             if (obj is not Project proj) throw new ArgumentNullException(nameof(obj));
-            return (int)(proj.Modified - Modified); 
+            return (int)(proj.Modified - Modified); // Не поддерживает long :///
         }
 
         public override string ToString() {
